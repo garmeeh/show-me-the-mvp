@@ -191,7 +191,8 @@ dist
 
 # End of https://www.toptal.com/developers/gitignore/api/macos,node,git
 
-### Wrangler ###
+### Cloudflare ###
+.cloudflare/
 .wrangler/
 .env*
 !.env.example

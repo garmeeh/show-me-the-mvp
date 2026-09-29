@@ -5,7 +5,7 @@ Starter app for a live Claude Code workshop. The home page (`src/react-app/App.t
 ## Layout
 
 - `src/react-app/`: React 19 front end, built by Vite. `@/` imports resolve here.
-- `src/worker/index.ts`: Hono API on Cloudflare Workers. Keep every route under `/api/`; everything else is served as the single-page app (`wrangler.json` → `not_found_handling`).
+- `src/worker/index.ts`: Hono API on Cloudflare Workers. Keep every route under `/api/`; everything else is served as the single-page app (`cloudflare.config.ts` → `assets.notFoundHandling`).
 - Package manager is pnpm.
 
 ## UI: shadcn/ui first
@@ -30,6 +30,6 @@ The look matches the workshop decks: cyanotype blue sheet with a drafting grid, 
 
 ## Checks
 
-Finish a change with `pnpm lint` and `pnpm build` both clean. After editing `wrangler.json`, run `pnpm cf-typegen` to regenerate the `Env` types.
+Finish a change with `pnpm lint` and `pnpm build` both clean. After editing `cloudflare.config.ts`, run `pnpm cf-typegen` to regenerate the `Env` types (`.cloudflare/types`, git-ignored). Use the `cf` CLI (`cf dev`, `cf build`, `cf deploy`), not Wrangler.
 
 TypeScript stays on 6.x: typescript-eslint does not support TS 7 yet. `paths` in the tsconfigs work without `baseUrl`, which TS 6 deprecates.

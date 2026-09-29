@@ -29,7 +29,9 @@ pnpm dlx shadcn@latest add <component>
 pnpm lint
 pnpm build
 pnpm check        # type-check, build and a dry-run deploy
-pnpm deploy       # deploy to Cloudflare Workers
+pnpm run deploy   # deploy to Cloudflare Workers
 ```
 
-Run `pnpm cf-typegen` after changing `wrangler.json` to regenerate the `Env` types.
+First deploy to your own Cloudflare account? Paste the prompt in [docs/deploy-with-cf.md](docs/deploy-with-cf.md) into your agent.
+
+Config lives in `cloudflare.config.ts`; `pnpm build` regenerates the `Env` types, or run `pnpm cf-typegen` on its own after changing it.
