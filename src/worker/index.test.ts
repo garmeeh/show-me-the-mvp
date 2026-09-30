@@ -17,6 +17,7 @@ describe("API routing", () => {
 });
 
 const brief: MvpBrief = {
+  needsMoreInfo: null,
   mvp: "A shared order sheet restaurants text to regulars each Friday",
   forWhom: "Owner-run takeaways in one town with a regulars list",
   riskiestAssumption: "Regulars will order from a text link instead of phoning",
@@ -82,6 +83,30 @@ describe("POST /api/brief", () => {
 
     expect(res.status).toBe(200);
     expect(mvpBriefSchema.parse(JSON.parse(await res.text()))).toEqual(brief);
+  });
+
+  it("streams a needs-more-info message for an Idea too vague to judge", async () => {
+    const needsMoreInfo: MvpBrief = {
+      needsMoreInfo:
+        "Who is it for, and what does it do for them? Say what problem it solves.",
+      mvp: "",
+      forWhom: "",
+      riskiestAssumption: "",
+      buildFirst: [],
+      cuts: [],
+      successTest: { question: "", passBar: "", ifItFails: "", howToRun: "" },
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => gatewayStream(JSON.stringify(needsMoreInfo))),
+    );
+
+    const res = await postIdea("hi");
+
+    expect(res.status).toBe(200);
+    expect(mvpBriefSchema.parse(JSON.parse(await res.text()))).toEqual(
+      needsMoreInfo,
+    );
   });
 
   it("sends the key and the Luna model to the Gateway", async () => {

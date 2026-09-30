@@ -6,7 +6,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { MvpBrief as Brief } from "../../shared/brief";
 
 // Renders a Brief as it streams: each section appears once its first data arrives.
+// A needs-more-info message replaces the sections, so no Brief is invented.
 export function MvpBrief({ brief }: { brief: DeepPartial<Brief> }) {
+  if (brief.needsMoreInfo) {
+    return (
+      <Section title="Needs more info" emphasis>
+        <p className="font-heading text-xl leading-snug font-semibold text-heading sm:text-2xl">
+          {brief.needsMoreInfo}
+        </p>
+      </Section>
+    );
+  }
+
   const buildFirst = brief.buildFirst?.filter(Boolean) ?? [];
   const cuts = brief.cuts?.filter((cut) => cut?.feature) ?? [];
   const successTest = brief.successTest;

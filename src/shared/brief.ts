@@ -3,6 +3,13 @@ import { z } from "zod";
 // The MVP Brief, shared by the worker (to constrain the model) and the client
 // (to read the stream). Field order is the order sections stream in and render.
 export const mvpBriefSchema = z.object({
+  // Nullable rather than optional: strict structured outputs require every key.
+  needsMoreInfo: z
+    .string()
+    .nullable()
+    .describe(
+      "Set only when the Idea is too vague to judge: what information is missing. Otherwise null.",
+    ),
   mvp: z.string().describe("The MVP in one line."),
   forWhom: z.string().describe("One narrow first user."),
   riskiestAssumption: z
