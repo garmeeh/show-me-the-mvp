@@ -5,6 +5,35 @@ import { cn } from "cn";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { MvpBrief as Brief } from "../../shared/brief";
 
+// Section titles in story order: the order the Brief streams in.
+const sectionTitles = {
+  mvp: "MVP",
+  forWhom: "For whom",
+  riskiestAssumption: "Riskiest Assumption",
+  buildFirst: "Build first",
+  cuts: "Cuts",
+  successTest: "Success Test",
+} as const;
+
+// Before the first submit: a faint sheet showing what the Brief will contain.
+export function EmptyBrief() {
+  return (
+    <ul
+      aria-label="Your MVP Brief will cover"
+      className="flex flex-col gap-4 opacity-60"
+    >
+      {Object.values(sectionTitles).map((title) => (
+        <li
+          key={title}
+          className="border border-dashed border-border/70 px-6 py-5 font-mono text-xs tracking-[0.14em] text-muted-foreground uppercase"
+        >
+          {title}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 // Renders a Brief as it streams: each section appears once its first data arrives.
 // A needs-more-info message replaces the sections, so no Brief is invented.
 export function MvpBrief({ brief }: { brief: DeepPartial<Brief> }) {
@@ -25,24 +54,24 @@ export function MvpBrief({ brief }: { brief: DeepPartial<Brief> }) {
   return (
     <div className="flex flex-col gap-4">
       {brief.mvp && (
-        <Section title="MVP">
+        <Section title={sectionTitles.mvp}>
           <p className="font-heading text-2xl leading-tight font-semibold text-heading sm:text-3xl">
             {brief.mvp}
           </p>
         </Section>
       )}
       {brief.forWhom && (
-        <Section title="For whom">
+        <Section title={sectionTitles.forWhom}>
           <p>{brief.forWhom}</p>
         </Section>
       )}
       {brief.riskiestAssumption && (
-        <Section title="Riskiest Assumption">
+        <Section title={sectionTitles.riskiestAssumption}>
           <p>{brief.riskiestAssumption}</p>
         </Section>
       )}
       {buildFirst.length > 0 && (
-        <Section title="Build first">
+        <Section title={sectionTitles.buildFirst}>
           <ol className="list-decimal space-y-1.5 pl-5 marker:font-mono marker:text-primary">
             {buildFirst.map((item, i) => (
               <li key={i}>{item}</li>
@@ -51,7 +80,7 @@ export function MvpBrief({ brief }: { brief: DeepPartial<Brief> }) {
         </Section>
       )}
       {cuts.length > 0 && (
-        <Section title="Cuts">
+        <Section title={sectionTitles.cuts}>
           <ul className="space-y-3">
             {cuts.map((cut, i) => (
               <li key={i}>
@@ -67,7 +96,7 @@ export function MvpBrief({ brief }: { brief: DeepPartial<Brief> }) {
         </Section>
       )}
       {successTest?.question && (
-        <Section title="Success Test" emphasis>
+        <Section title={sectionTitles.successTest} emphasis>
           <p className="font-heading text-xl leading-snug font-semibold text-heading sm:text-2xl">
             {successTest.question}
           </p>

@@ -6,10 +6,10 @@ See `.scratch/mvp-brief/spec.md` (user stories 3–6).
 
 **Blocked by:** 01
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] 3–4 example Idea chips appear under the text area, and clicking one fills it
-- [ ] Before the first submit, the Brief column shows the section titles as an empty sheet
-- [ ] ⌘/Ctrl+Enter in the text area submits
-- [ ] Client tests: clicking a chip fills the Idea; the empty sheet lists the section titles; ⌘/Ctrl+Enter triggers a request
-- [ ] `pnpm verify` is clean
+- [x] 3–4 example Idea chips appear under the text area, and clicking one fills it
+- [x] Before the first submit, the Brief column shows the section titles as an empty sheet
+- [x] ⌘/Ctrl+Enter in the text area submits
+- [x] Client tests: clicking a chip fills the Idea; the empty sheet lists the section titles; ⌘/Ctrl+Enter triggers a request
+- [x] `pnpm verify` is clean

@@ -144,3 +144,82 @@ describe("MVP Brief", () => {
     expect(screen.queryByText(message)).not.toBeInTheDocument();
   });
 });
+
+describe("First-run guidance", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("fills the Idea when an example is clicked", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const ideaBox = screen.getByRole("textbox", { name: /your big idea/i });
+    const examples = within(
+      screen.getByRole("group", { name: /example ideas/i }),
+    ).getAllByRole("button");
+
+    expect(examples.length).toBeGreaterThanOrEqual(3);
+    expect(examples.length).toBeLessThanOrEqual(4);
+
+    await user.type(ideaBox, "something I half wrote");
+    await user.click(examples[1]);
+
+    expect(ideaBox).toHaveValue(examples[1].textContent);
+  });
+
+  it("shows the Brief's section titles as an empty sheet until the first submit", async () => {
+    // The request stays pending: the sheet must go on submit, not when data arrives.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise<Response>(() => {})),
+    );
+    render(<App />);
+
+    const emptySheet = screen.getByRole("list", {
+      name: /your mvp brief will cover/i,
+    });
+    expect(
+      within(emptySheet)
+        .getAllByRole("listitem")
+        .map((item) => item.textContent),
+    ).toEqual([
+      "MVP",
+      "For whom",
+      "Riskiest Assumption",
+      "Build first",
+      "Cuts",
+      "Success Test",
+    ]);
+
+    await submitIdea("An app for takeaways to take orders");
+
+    expect(
+      screen.queryByRole("list", { name: /your mvp brief will cover/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ["⌘+Enter", "{Meta>}{Enter}{/Meta}"],
+    ["Ctrl+Enter", "{Control>}{Enter}{/Control}"],
+  ])("submits the Idea with %s", async (_, keys) => {
+    const fetchMock = vi.fn<typeof fetch>(async () => streamedBrief(brief));
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.type(
+      screen.getByRole("textbox", { name: /your big idea/i }),
+      "An app{Enter}for takeaways",
+    );
+    await user.keyboard(keys);
+
+    expect(
+      await screen.findByRole("region", { name: "MVP" }),
+    ).toHaveTextContent(brief.mvp);
+    expect(fetchMock).toHaveBeenCalledOnce();
+    // A plain Enter is a line break in the Idea, not a submit.
+    expect(JSON.parse(String(fetchMock.mock.calls[0][1]?.body))).toBe(
+      "An app\nfor takeaways",
+    );
+  });
+});
