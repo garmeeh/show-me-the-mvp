@@ -401,3 +401,173 @@ describe("Copy as Markdown", () => {
     ).not.toBeInTheDocument();
   });
 });
+
+// A /api/brief stand-in that sends the Brief's JSON up to `upTo`, then stays open
+// as if the model were still writing; aborting breaks off the body like a real fetch.
+function briefStreamingUntil(upTo: string) {
+  const json = JSON.stringify(brief);
+  const firstPart = json.slice(0, json.indexOf(upTo));
+  return vi.fn<typeof fetch>(async (_, init) => {
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode(firstPart));
+        init?.signal?.addEventListener("abort", () =>
+          controller.error(init.signal?.reason),
+        );
+      },
+    });
+    return new Response(body);
+  });
+}
+
+const sectionOrder = [
+  "MVP",
+  "For whom",
+  "Riskiest Assumption",
+  "Build first",
+  "Cuts",
+  "Success Test",
+];
+
+describe("Empty Idea", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("won't submit a blank Idea by button or keyboard, and says what's needed", async () => {
+    const fetchMock = vi.fn<typeof fetch>(async () => streamedBrief(brief));
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    render(<App />);
+    const ideaBox = screen.getByRole("textbox", { name: /your big idea/i });
+    const submitButton = screen.getByRole("button", { name: /strip it back/i });
+
+    expect(submitButton).toBeDisabled();
+    expect(submitButton).toHaveAccessibleDescription(
+      /describe an idea or pick an example/i,
+    );
+
+    await user.type(ideaBox, "   {Enter}  ");
+    await user.click(submitButton);
+    await user.keyboard("{Meta>}{Enter}{/Meta}");
+    await user.keyboard("{Control>}{Enter}{/Control}");
+
+    expect(submitButton).toBeDisabled();
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole("list", { name: /your mvp brief will cover/i }),
+    ).toBeInTheDocument();
+
+    await user.type(ideaBox, "An app for takeaways");
+
+    expect(submitButton).toBeEnabled();
+    expect(submitButton).not.toHaveAccessibleDescription();
+    expect(
+      screen.queryByText(/describe an idea or pick an example/i),
+    ).not.toBeInTheDocument();
+  });
+});
+
+describe("Brief sheet while drafting", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("keeps every section's place and marks the first one Drafting before any data arrives", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise<Response>(() => {})),
+    );
+    render(<App />);
+
+    await submitIdea("An app for takeaways to take orders");
+
+    const briefPane = screen.getByRole("region", { name: "MVP Brief" });
+    for (const title of sectionOrder) {
+      expect(within(briefPane).getByText(title)).toBeInTheDocument();
+    }
+    // Placeholders, not cards: no section has data yet.
+    expect(
+      within(briefPane).queryByRole("region", { name: "MVP" }),
+    ).not.toBeInTheDocument();
+    const drafting = within(briefPane).getAllByText("Drafting…");
+    expect(drafting).toHaveLength(1);
+    expect(drafting[0].parentElement).toHaveTextContent("MVP");
+  });
+
+  it("fills sections in place as they stream, and drops Drafting when stopped", async () => {
+    vi.stubGlobal("fetch", briefStreamingUntil('"riskiestAssumption"'));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await submitIdea("An app for takeaways to take orders");
+
+    expect(
+      await screen.findByRole("region", { name: "For whom" }),
+    ).toHaveTextContent(brief.forWhom);
+    const briefPane = screen.getByRole("region", { name: "MVP Brief" });
+    // Cards and placeholders together still read in story order.
+    const text = briefPane.textContent ?? "";
+    const positions = sectionOrder.map((title) => text.indexOf(title));
+    expect(positions.every((p) => p >= 0)).toBe(true);
+    expect([...positions].sort((a, b) => a - b)).toEqual(positions);
+    const drafting = within(briefPane).getAllByText("Drafting…");
+    expect(drafting).toHaveLength(1);
+    expect(drafting[0].parentElement).toHaveTextContent("Riskiest Assumption");
+
+    await user.click(screen.getByRole("button", { name: /stop/i }));
+    await screen.findByRole("button", { name: /strip it back/i });
+
+    expect(screen.queryByText("Drafting…")).not.toBeInTheDocument();
+    for (const title of sectionOrder.slice(2)) {
+      expect(within(briefPane).getByText(title)).toBeInTheDocument();
+    }
+  });
+});
+
+describe("Brief tied to its Idea", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("shows which Idea the Brief is for, and flags an edited Idea until resubmitted", async () => {
+    const fetchMock = vi.fn<typeof fetch>(async () => streamedBrief(brief));
+    vi.stubGlobal("fetch", fetchMock);
+    const writeText = vi
+      .spyOn(navigator.clipboard, "writeText")
+      .mockResolvedValue();
+    const user = userEvent.setup();
+    render(<App />);
+    const ideaBox = screen.getByRole("textbox", { name: /your big idea/i });
+
+    expect(screen.queryByText(/^brief for$/i)).not.toBeInTheDocument();
+
+    await submitIdea("  An app for takeaways  ");
+    await screen.findByRole("button", { name: /copy as markdown/i });
+
+    expect(JSON.parse(String(fetchMock.mock.calls[0][1]?.body))).toBe(
+      "An app for takeaways",
+    );
+    expect(screen.getByText(/^brief for$/i).parentElement).toHaveTextContent(
+      /^brief forAn app for takeaways$/i,
+    );
+    expect(screen.queryByText(/idea changed/i)).not.toBeInTheDocument();
+
+    await user.type(ideaBox, "and bakeries");
+
+    expect(screen.getByText(/idea changed/i)).toBeInTheDocument();
+    // The Brief still belongs to the submitted Idea, and can still be copied.
+    expect(screen.getByText(/^brief for$/i).parentElement).toHaveTextContent(
+      /An app for takeaways$/,
+    );
+    await user.click(screen.getByRole("button", { name: /copy as markdown/i }));
+    expect(writeText).toHaveBeenCalledOnce();
+    expect(writeText.mock.calls[0][0]).toContain(brief.mvp);
+
+    // Back to the submitted text (whitespace aside): the Brief is current again.
+    await user.clear(ideaBox);
+    await user.type(ideaBox, "An app for takeaways ");
+
+    expect(screen.queryByText(/idea changed/i)).not.toBeInTheDocument();
+  });
+});

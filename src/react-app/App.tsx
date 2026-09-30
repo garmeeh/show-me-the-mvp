@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useObject } from "@ai-sdk/react";
+import { cn } from "cn";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
@@ -18,7 +19,8 @@ const exampleIdeas = [
 
 function App() {
   const [idea, setIdea] = useState("");
-  const [hasSubmitted, setHasSubmitted] = useState(false);
+  // The trimmed Idea behind the Brief on screen; null until the first submit.
+  const [submittedIdea, setSubmittedIdea] = useState<string | null>(null);
   // Set only when the stream closes on its own with every section: never for a
   // stopped or failed Brief, or a request for more information.
   const [completeBrief, setCompleteBrief] = useState<Brief | null>(null);
@@ -34,6 +36,10 @@ function App() {
     onFinish: ({ object }) =>
       setCompleteBrief(object && !object.needsMoreInfo ? object : null),
   });
+  const trimmedIdea = idea.trim();
+  const canSubmit = trimmedIdea !== "";
+  const briefIsStale =
+    submittedIdea !== null && !isLoading && trimmedIdea !== submittedIdea;
 
   return (
     <>
@@ -53,9 +59,10 @@ function App() {
             className="flex flex-col gap-3"
             onSubmit={(event) => {
               event.preventDefault();
-              setHasSubmitted(true);
+              if (!canSubmit) return;
+              setSubmittedIdea(trimmedIdea);
               setCompleteBrief(null);
-              submit(idea);
+              submit(trimmedIdea);
             }}
           >
             <label htmlFor="idea" className="kicker">
@@ -66,13 +73,11 @@ function App() {
               value={idea}
               onChange={(event) => setIdea(event.target.value)}
               onKeyDown={(event) => {
-                if (
-                  event.key === "Enter" &&
-                  (event.metaKey || event.ctrlKey) &&
-                  !isLoading
-                ) {
+                if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
                   event.preventDefault();
-                  event.currentTarget.form?.requestSubmit();
+                  if (canSubmit && !isLoading) {
+                    event.currentTarget.form?.requestSubmit();
+                  }
                 }
               }}
               placeholder="An app that…"
@@ -121,6 +126,8 @@ function App() {
                   key="submit"
                   type="submit"
                   size="lg"
+                  disabled={!canSubmit}
+                  aria-describedby={canSubmit ? undefined : "idea-required"}
                   className="px-5 font-mono tracking-[0.14em] uppercase"
                 >
                   Strip it back
@@ -130,6 +137,11 @@ function App() {
                 <Kbd>⌘/Ctrl</Kbd>+<Kbd>Enter</Kbd>
               </KbdGroup>
             </div>
+            {!canSubmit && !isLoading && (
+              <p id="idea-required" className="text-sm text-muted-foreground">
+                Describe an idea or pick an example.
+              </p>
+            )}
           </form>
         </div>
         <section aria-label="MVP Brief" aria-busy={isLoading}>
@@ -140,13 +152,34 @@ function App() {
               </AlertDescription>
             </Alert>
           )}
-          {completeBrief && (
-            <div className="mb-4">
-              <CopyBriefButton brief={completeBrief} />
-            </div>
+          {submittedIdea === null ? (
+            <EmptyBrief />
+          ) : (
+            <>
+              <p className="mb-4 flex flex-col gap-1.5">
+                <span className="kicker">Brief for</span>
+                <span className="text-lg text-heading">{submittedIdea}</span>
+              </p>
+              {completeBrief && (
+                <div className="mb-4">
+                  <CopyBriefButton brief={completeBrief} />
+                </div>
+              )}
+              {briefIsStale && (
+                <p className="mb-4 font-mono text-sm text-primary">
+                  Idea changed: strip it back again to update the Brief.
+                </p>
+              )}
+              <div
+                className={cn(
+                  "transition-opacity",
+                  briefIsStale && "opacity-40",
+                )}
+              >
+                <MvpBrief brief={brief ?? {}} drafting={isLoading} />
+              </div>
+            </>
           )}
-          {brief && <MvpBrief brief={brief} />}
-          {!hasSubmitted && <EmptyBrief />}
         </section>
       </main>
     </>
