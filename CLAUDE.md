@@ -28,9 +28,22 @@ The look matches the workshop decks: cyanotype blue sheet with a drafting grid, 
 - `.kicker` gives the deck's mono uppercase label with a bar.
 - The app is dark-only (`<html class="dark">`); write for the blue sheet.
 
+## Tests
+
+Vitest, configured in `vitest.config.ts` with two projects: `api` (Node, `src/worker/**/*.test.ts`) and `client` (happy-dom with React Testing Library, user-event and jest-dom matchers, `src/react-app/**/*.test.{ts,tsx}`). Put `*.test.ts(x)` next to the module it covers; the environment follows from the folder. `pnpm test` runs once, `pnpm test:watch` watches. Import `describe`, `it` and `expect` from `vitest`; globals are off.
+
+Every test must fail when the behaviour it names breaks. Ask "would this still pass if the feature were broken?" If it would, the test is tautological, so don't write it.
+
+- Assert what a caller sees. API: send a request through `app.request()` and check the status and body. Client: render, query by role and label, and interact through `userEvent`.
+- Mock only system boundaries: network, time and third-party services. Exercise our own modules for real.
+- Derive expected values from the behaviour, not by copying literals out of the code. Skip markup snapshots and shadcn internals.
+- No coverage tool or threshold: write a test because the behaviour matters, not to reach a number.
+
+When the worker gets its first Cloudflare binding (D1, KV…), move the `api` project to `@cloudflare/vitest-pool-workers` so tests hit real local bindings. First check that the pool can read `cloudflare.config.ts`, since the repo has no Wrangler config.
+
 ## Checks
 
-Finish every change with `pnpm verify` clean: it runs `format:check`, `lint` and `build`, and CI runs the same. `pnpm fix` applies Prettier and ESLint auto-fixes across the repo.
+Finish every change with `pnpm verify` clean: it runs `format:check`, `lint`, `test` and `build`, and CI runs the same. The pre-commit hook doesn't run tests. `pnpm fix` applies Prettier and ESLint auto-fixes across the repo.
 
 The pre-commit hook runs Prettier and `eslint --fix` on staged files and re-stages the result. If it rejects a commit, fix the errors it reports and commit again. Never bypass it with `--no-verify`.
 
@@ -46,7 +59,7 @@ Issues and specs live as local markdown files under `.scratch/<feature-slug>/`. 
 
 ### Triage labels
 
-The five default triage roles (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`), recorded on each issue's `Status:` line. See `docs/agents/triage-labels.md`.
+The five default triage roles (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`), plus `done` for finished work, recorded on each issue's `Status:` line. See `docs/agents/triage-labels.md`.
 
 ### Domain docs
 
