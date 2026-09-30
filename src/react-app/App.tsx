@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { Textarea } from "@/components/ui/textarea";
 import { EmptyBrief, MvpBrief } from "@/components/mvp-brief";
-import { mvpBriefSchema } from "../shared/brief";
+import { CopyBriefButton } from "@/components/copy-brief-button";
+import { mvpBriefSchema, type MvpBrief as Brief } from "../shared/brief";
 
 // One click shows a first-time visitor what the app does; the text stays editable.
 const exampleIdeas = [
@@ -18,6 +19,9 @@ const exampleIdeas = [
 function App() {
   const [idea, setIdea] = useState("");
   const [hasSubmitted, setHasSubmitted] = useState(false);
+  // Set only when the stream closes on its own with every section: never for a
+  // stopped or failed Brief, or a request for more information.
+  const [completeBrief, setCompleteBrief] = useState<Brief | null>(null);
   const {
     object: brief,
     submit,
@@ -27,6 +31,8 @@ function App() {
   } = useObject({
     api: "/api/brief",
     schema: mvpBriefSchema,
+    onFinish: ({ object }) =>
+      setCompleteBrief(object && !object.needsMoreInfo ? object : null),
   });
 
   return (
@@ -48,6 +54,7 @@ function App() {
             onSubmit={(event) => {
               event.preventDefault();
               setHasSubmitted(true);
+              setCompleteBrief(null);
               submit(idea);
             }}
           >
@@ -132,6 +139,11 @@ function App() {
                 The MVP Brief failed. Submit your Idea again to retry.
               </AlertDescription>
             </Alert>
+          )}
+          {completeBrief && (
+            <div className="mb-4">
+              <CopyBriefButton brief={completeBrief} />
+            </div>
           )}
           {brief && <MvpBrief brief={brief} />}
           {!hasSubmitted && <EmptyBrief />}

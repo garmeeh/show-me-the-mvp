@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { MvpBrief } from "../shared/brief";
@@ -292,5 +292,112 @@ describe("First-run guidance", () => {
     expect(JSON.parse(String(fetchMock.mock.calls[0][1]?.body))).toBe(
       "An app\nfor takeaways",
     );
+  });
+});
+
+describe("Copy as Markdown", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("copies the finished Brief as Markdown and confirms it", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => streamedBrief(brief)),
+    );
+    const user = userEvent.setup();
+    const writeText = vi
+      .spyOn(navigator.clipboard, "writeText")
+      .mockResolvedValue();
+    render(<App />);
+
+    expect(
+      screen.queryByRole("button", { name: /copy as markdown/i }),
+    ).not.toBeInTheDocument();
+
+    await submitIdea("An app for takeaways to take orders");
+    await user.click(
+      await screen.findByRole("button", { name: /copy as markdown/i }),
+    );
+
+    expect(writeText).toHaveBeenCalledOnce();
+    const markdown = writeText.mock.calls[0][0];
+    // A heading per section, in the order the Brief reads.
+    expect(
+      markdown.match(/^## .+$/gm)?.map((heading) => heading.slice(3)),
+    ).toEqual([
+      "MVP",
+      "For whom",
+      "Riskiest Assumption",
+      "Build first",
+      "Cuts",
+      "Success Test",
+    ]);
+    expect(markdown).toContain(brief.mvp);
+    expect(markdown).toContain(brief.forWhom);
+    expect(markdown).toContain(brief.riskiestAssumption);
+    expect(markdown).toContain("1. One order form per restaurant\n");
+    expect(markdown).toContain("2. SMS link to the form\n");
+    expect(markdown).toMatch(
+      /^- .*Payments.*Cash on collection works for now/m,
+    );
+    expect(markdown).toContain(brief.successTest.question);
+    expect(markdown).toMatch(/Pass bar.*10 restaurants each get 5 orders/);
+    expect(markdown).toMatch(/If it fails.*Kill it and talk to owners/);
+    expect(markdown).toMatch(/How to run it.*Google Form per restaurant/);
+    expect(await screen.findByRole("status")).toHaveTextContent(/copied/i);
+  });
+
+  it("says so when the clipboard refuses the copy", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => streamedBrief(brief)),
+    );
+    const user = userEvent.setup();
+    vi.spyOn(navigator.clipboard, "writeText").mockRejectedValue(
+      new DOMException("Write permission denied.", "NotAllowedError"),
+    );
+    render(<App />);
+
+    await submitIdea("An app for takeaways to take orders");
+    await user.click(
+      await screen.findByRole("button", { name: /copy as markdown/i }),
+    );
+
+    const status = await screen.findByRole("status");
+    await waitFor(() => expect(status).toHaveTextContent(/couldn't copy/i));
+    expect(status).not.toHaveTextContent(/copied/i);
+  });
+
+  it("doesn't offer Copy for a Brief that was stopped partway", async () => {
+    // Stopped mid-way through the last field: every section has started, so
+    // the partial Brief already has the full shape.
+    const json = JSON.stringify(brief);
+    const firstPart = json.slice(0, json.indexOf("texted by the owner"));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>(async (_, init) => {
+        const body = new ReadableStream<Uint8Array>({
+          start(controller) {
+            controller.enqueue(new TextEncoder().encode(firstPart));
+            init?.signal?.addEventListener("abort", () =>
+              controller.error(init.signal?.reason),
+            );
+          },
+        });
+        return new Response(body);
+      }),
+    );
+    const user = userEvent.setup();
+    render(<App />);
+
+    await submitIdea("An app for takeaways to take orders");
+    await screen.findByText(/Google Form per restaurant/);
+    await user.click(screen.getByRole("button", { name: /stop/i }));
+    await screen.findByRole("button", { name: /strip it back/i });
+
+    expect(
+      screen.queryByRole("button", { name: /copy as markdown/i }),
+    ).not.toBeInTheDocument();
   });
 });

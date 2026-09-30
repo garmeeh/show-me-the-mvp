@@ -3,17 +3,8 @@ import { useId } from "react";
 import type { DeepPartial } from "ai";
 import { cn } from "cn";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { sectionTitles, successTestTerms } from "@/lib/brief-sections";
 import type { MvpBrief as Brief } from "../../shared/brief";
-
-// Section titles in story order: the order the Brief streams in.
-const sectionTitles = {
-  mvp: "MVP",
-  forWhom: "For whom",
-  riskiestAssumption: "Riskiest Assumption",
-  buildFirst: "Build first",
-  cuts: "Cuts",
-  successTest: "Success Test",
-} as const;
 
 // Before the first submit: a faint sheet showing what the Brief will contain.
 export function EmptyBrief() {
@@ -101,9 +92,15 @@ export function MvpBrief({ brief }: { brief: DeepPartial<Brief> }) {
             {successTest.question}
           </p>
           <dl className="mt-4 grid gap-3">
-            <Detail term="Pass bar">{successTest.passBar}</Detail>
-            <Detail term="If it fails">{successTest.ifItFails}</Detail>
-            <Detail term="How to run it">{successTest.howToRun}</Detail>
+            <Detail term={successTestTerms.passBar}>
+              {successTest.passBar}
+            </Detail>
+            <Detail term={successTestTerms.ifItFails}>
+              {successTest.ifItFails}
+            </Detail>
+            <Detail term={successTestTerms.howToRun}>
+              {successTest.howToRun}
+            </Detail>
           </dl>
         </Section>
       )}
