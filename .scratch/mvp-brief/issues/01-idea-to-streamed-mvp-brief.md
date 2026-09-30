@@ -6,16 +6,16 @@ See `.scratch/mvp-brief/spec.md` (user stories 1–2, 7–20, 22–23, 28–31) 
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] `AI_GATEWAY_API_KEY` is declared as a secret in the Cloudflare config, the `Env` types are regenerated, and a committed `.dev.vars.example` documents the key
-- [ ] The key is passed explicitly from the request env to the Gateway provider, not read from `process.env`
-- [ ] The model ID lives in one constant
-- [ ] One MVP Brief schema is shared by the worker and the client, and its field order matches the order sections stream in
-- [ ] `POST /api/brief` takes the Idea and streams the MVP Brief using AI SDK 7's `streamText` with `Output.object` and the stateless text-stream response helper, with `onError` logging
-- [ ] The instructions enforce a direct tone and a behaviour-based Success Test with a numeric pass bar, a timeframe, a fail action and a scrappy how-to-run, and exclude vanity signals
-- [ ] The client uses `useObject`, and each section renders as soon as its partial data arrives
-- [ ] The layout is two columns on desktop (Idea sticky) and stacks on mobile, and the Success Test card is visually emphasised in amber
-- [ ] API test (via `app.request`, with global `fetch` stubbed as the Gateway): the streamed body parses to a Brief, and the outgoing request carries the key and the Luna model ID
-- [ ] Client test (render `<App />`, with `fetch` stubbed for `/api/brief`): typing an Idea and submitting shows the Brief sections
-- [ ] `pnpm verify` is clean
+- [x] `AI_GATEWAY_API_KEY` is declared as a secret in the Cloudflare config, the `Env` types are regenerated, and a committed `.dev.vars.example` documents the key
+- [x] The key is passed explicitly from the request env to the Gateway provider, not read from `process.env`
+- [x] The model ID lives in one constant
+- [x] One MVP Brief schema is shared by the worker and the client, and its field order matches the order sections stream in
+- [x] `POST /api/brief` takes the Idea and streams the MVP Brief using AI SDK 7's `streamText` with `Output.object` and the stateless text-stream response helper, with `onError` logging
+- [x] The instructions enforce a direct tone and a behaviour-based Success Test with a numeric pass bar, a timeframe, a fail action and a scrappy how-to-run, and exclude vanity signals
+- [x] The client uses `useObject`, and each section renders as soon as its partial data arrives
+- [x] The layout is two columns on desktop (Idea sticky) and stacks on mobile, and the Success Test card is visually emphasised in amber
+- [x] API test (via `app.request`, with global `fetch` stubbed as the Gateway): the streamed body parses to a Brief, and the outgoing request carries the key and the Luna model ID
+- [x] Client test (render `<App />`, with `fetch` stubbed for `/api/brief`): typing an Idea and submitting shows the Brief sections
+- [x] `pnpm verify` is clean

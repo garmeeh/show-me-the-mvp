@@ -1,4 +1,4 @@
-import { defineConfig } from "cf/config";
+import { bindings, defineConfig } from "cf/config";
 
 export default defineConfig({
   worker: {
@@ -12,6 +12,10 @@ export default defineConfig({
     // Static assets are the Vite client build; unmatched routes fall back to the SPA.
     assets: {
       notFoundHandling: "single-page-application",
+    },
+    env: {
+      // Vercel AI Gateway key. Local dev reads it from .dev.vars.
+      AI_GATEWAY_API_KEY: bindings.secret(),
     },
   },
 });
