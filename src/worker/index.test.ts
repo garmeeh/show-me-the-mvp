@@ -71,6 +71,7 @@ function postIdea(idea: string) {
 describe("POST /api/brief", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   it("streams the MVP Brief for an Idea", async () => {
@@ -122,5 +123,88 @@ describe("POST /api/brief", () => {
     expect(headers.get("authorization")).toBe("Bearer test-gateway-key");
     expect(headers.get("ai-language-model-id")).toBe("openai/gpt-6-luna");
     expect(String(init?.body)).toContain("An app for takeaways");
+  });
+
+  it("fails the request instead of streaming an empty success when the Gateway errors", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        Response.json(
+          {
+            error: { message: "Invalid API key", type: "authentication_error" },
+          },
+          { status: 401 },
+        ),
+      ),
+    );
+
+    const res = await postIdea("An app for takeaways");
+
+    expect(res.status).toBe(502);
+    expect(await res.text()).not.toBe("");
+  });
+
+  it("breaks off the stream when the Gateway fails partway through", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const parts = [
+      { type: "stream-start", warnings: [] },
+      { type: "text-start", id: "t" },
+      {
+        type: "text-delta",
+        id: "t",
+        delta: '{"needsMoreInfo":null,"mvp":"A sh',
+      },
+      { type: "error", error: { message: "Upstream overloaded" } },
+    ];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () =>
+          new Response(
+            parts.map((p) => `data: ${JSON.stringify(p)}\n\n`).join(""),
+            { headers: { "content-type": "text/event-stream" } },
+          ),
+      ),
+    );
+
+    const res = await postIdea("An app for takeaways");
+
+    await expect(res.text()).rejects.toThrow();
+  });
+
+  it("fails the request when the Gateway finishes without writing a Brief", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => gatewayStream("")),
+    );
+
+    const res = await postIdea("An app for takeaways");
+
+    expect(res.status).toBe(502);
+  });
+
+  it("fails the request when the Gateway key is missing", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        Response.json(
+          {
+            error: { message: "Missing API key", type: "authentication_error" },
+          },
+          { status: 401 },
+        ),
+      ),
+    );
+
+    const res = await app.request(
+      "/api/brief",
+      { method: "POST", body: JSON.stringify("An app for takeaways") },
+      {},
+    );
+
+    expect(res.status).toBe(502);
   });
 });

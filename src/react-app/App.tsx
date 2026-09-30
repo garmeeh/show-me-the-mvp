@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useObject } from "@ai-sdk/react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,7 +21,9 @@ function App() {
   const {
     object: brief,
     submit,
+    stop,
     isLoading,
+    error,
   } = useObject({
     api: "/api/brief",
     schema: mvpBriefSchema,
@@ -95,14 +98,27 @@ function App() {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <Button
-                type="submit"
-                size="lg"
-                disabled={isLoading}
-                className="px-5 font-mono tracking-[0.14em] uppercase"
-              >
-                Strip it back
-              </Button>
+              {isLoading ? (
+                <Button
+                  key="stop"
+                  type="button"
+                  size="lg"
+                  variant="outline"
+                  onClick={stop}
+                  className="px-5 font-mono tracking-[0.14em] uppercase"
+                >
+                  Stop
+                </Button>
+              ) : (
+                <Button
+                  key="submit"
+                  type="submit"
+                  size="lg"
+                  className="px-5 font-mono tracking-[0.14em] uppercase"
+                >
+                  Strip it back
+                </Button>
+              )}
               <KbdGroup className="text-xs text-muted-foreground">
                 <Kbd>⌘/Ctrl</Kbd>+<Kbd>Enter</Kbd>
               </KbdGroup>
@@ -110,6 +126,13 @@ function App() {
           </form>
         </div>
         <section aria-label="MVP Brief" aria-busy={isLoading}>
+          {error && (
+            <Alert variant="destructive" className="mb-6 px-4 py-3">
+              <AlertDescription className="text-base">
+                The MVP Brief failed. Submit your Idea again to retry.
+              </AlertDescription>
+            </Alert>
+          )}
           {brief && <MvpBrief brief={brief} />}
           {!hasSubmitted && <EmptyBrief />}
         </section>

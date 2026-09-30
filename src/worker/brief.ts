@@ -1,5 +1,11 @@
 import { createGateway } from "@ai-sdk/gateway";
-import { createTextStreamResponse, Output, streamText, toTextStream } from "ai";
+import {
+  createTextStreamResponse,
+  Output,
+  streamText,
+  type TextStreamPart,
+  type ToolSet,
+} from "ai";
 import { mvpBriefSchema } from "../shared/brief";
 
 // The one place the model is chosen.
@@ -23,7 +29,10 @@ Audience: indie hackers and early founders. Be direct and specific to this Idea.
   - howToRun: a scrappy way to run it, such as a landing page, a concierge service or a manual process. Prefer no code.
   - Vanity signals never count: praise, likes, friends or family signing up, waitlist sign-ups without commitment, or answers to "would you use it?".`;
 
-export function streamBrief(idea: string, apiKey: string): Response {
+export async function streamBrief(
+  idea: string,
+  apiKey: string,
+): Promise<Response> {
   const gateway = createGateway({ apiKey });
 
   const result = streamText({
@@ -37,7 +46,49 @@ export function streamBrief(idea: string, apiKey: string): Response {
     },
   });
 
+  // Error parts become a stream error, so a failed run never reads as an empty success.
+  const textReader = result.stream
+    .pipeThrough(
+      new TransformStream<TextStreamPart<ToolSet>, string>({
+        transform(part, controller) {
+          if (part.type === "text-delta") controller.enqueue(part.text);
+          if (part.type === "error") controller.error(part.error);
+        },
+      }),
+    )
+    .getReader();
+
+  // Hold the status until the first text arrives: a Gateway failure, or a run that
+  // writes nothing, is a 502 rather than an empty success.
+  let firstChunk: string;
+  try {
+    const first = await textReader.read();
+    if (first.done) {
+      console.error("MVP Brief stream ended without any text");
+      return briefFailed();
+    }
+    firstChunk = first.value;
+  } catch {
+    return briefFailed();
+  }
+
   return createTextStreamResponse({
-    stream: toTextStream({ stream: result.stream }),
+    stream: new ReadableStream<string>({
+      start(controller) {
+        controller.enqueue(firstChunk);
+      },
+      async pull(controller) {
+        const { done, value } = await textReader.read();
+        if (done) controller.close();
+        else controller.enqueue(value);
+      },
+      cancel(reason) {
+        return textReader.cancel(reason);
+      },
+    }),
   });
+}
+
+function briefFailed(): Response {
+  return new Response("The MVP Brief failed.", { status: 502 });
 }

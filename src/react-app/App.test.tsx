@@ -145,6 +145,77 @@ describe("MVP Brief", () => {
   });
 });
 
+describe("Stop and errors", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("offers Stop while the Brief streams, and keeps what arrived when pressed", async () => {
+    // The stream sends the MVP section, then stays open as if the model were still
+    // writing. Like a real fetch, aborting the request breaks off the body.
+    const json = JSON.stringify(brief);
+    const firstPart = json.slice(0, json.indexOf('"riskiestAssumption"'));
+    const fetchMock = vi.fn<typeof fetch>(async (_, init) => {
+      const body = new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode(firstPart));
+          init?.signal?.addEventListener("abort", () =>
+            controller.error(init.signal?.reason),
+          );
+        },
+      });
+      return new Response(body);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    render(<App />);
+
+    await submitIdea("An app for takeaways to take orders");
+
+    expect(
+      await screen.findByRole("region", { name: "MVP" }),
+    ).toHaveTextContent(brief.mvp);
+    expect(
+      screen.queryByRole("button", { name: /strip it back/i }),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /stop/i }));
+
+    expect(
+      await screen.findByRole("button", { name: /strip it back/i }),
+    ).toBeEnabled();
+    expect(fetchMock.mock.calls[0][1]?.signal?.aborted).toBe(true);
+    expect(screen.getByRole("region", { name: "MVP" })).toHaveTextContent(
+      brief.mvp,
+    );
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("shows an error when the Brief request fails, and a resubmit retries", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(
+          new Response("The MVP Brief failed.", { status: 502 }),
+        )
+        .mockResolvedValueOnce(streamedBrief(brief)),
+    );
+    render(<App />);
+
+    await submitIdea("An app for takeaways to take orders");
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/failed/i);
+
+    await submitIdea("An app for takeaways to take orders");
+
+    expect(
+      await screen.findByRole("region", { name: "MVP" }),
+    ).toHaveTextContent(brief.mvp);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+});
+
 describe("First-run guidance", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
