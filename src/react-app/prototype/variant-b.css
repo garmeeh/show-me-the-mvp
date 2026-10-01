@@ -1,0 +1,82 @@
+/* PROTOTYPE, throw away: Variant B styles, scoped to html[data-proto="b"]. */
+
+html[data-proto="b"] {
+  --background: #f4f6f8;
+  --foreground: #3f3f3f;
+  --heading: #16324a;
+  --card: #ffffff;
+  --card-foreground: #3f3f3f;
+  --popover: #ffffff;
+  --popover-foreground: #3f3f3f;
+  --primary: #ec671b;
+  --primary-foreground: #ffffff;
+  --secondary: #ededed;
+  --secondary-foreground: #2b2b2b;
+  --muted: #ededed;
+  --muted-foreground: #5b5b5b;
+  --accent: #e8f0f7;
+  --accent-foreground: #16324a;
+  --destructive: #b3261e;
+  --border: #dfe3e8;
+  --input: #cfd6de;
+  --ring: #1a6aa1;
+  --radius: 1rem;
+  color-scheme: light;
+
+  --vb-blue: #1a6aa1;
+  --vb-orange: #ec671b;
+  --vb-orange-text: #b54c0e;
+  --vb-magenta: #b9115b;
+  --vb-lime: #94c93e;
+}
+
+html[data-proto="b"] body {
+  background: var(--background);
+  background-attachment: initial;
+  color: var(--foreground);
+}
+
+html[data-proto="b"] :is(h1, h2, h3) {
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  letter-spacing: 0;
+}
+
+/* Anton display face: always uppercase, regular weight, tight leading. */
+html[data-proto="b"] .vb-display {
+  font-family: "Anton", "Impact", "Arial Narrow", sans-serif;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  line-height: 1.04;
+}
+
+/* Small uppercase section label in the document. */
+html[data-proto="b"] .vb-label {
+  font-family: "Anton", "Impact", sans-serif;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 1.125rem;
+  line-height: 1.1;
+}
+
+/* Drafting pulse on the orange rail node. */
+@keyframes vb-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgb(236 103 27 / 0.55);
+  }
+  70% {
+    box-shadow: 0 0 0 12px rgb(236 103 27 / 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgb(236 103 27 / 0);
+  }
+}
+html[data-proto="b"] .vb-pulse {
+  animation: vb-pulse 1.6s ease-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-proto="b"] .vb-pulse {
+    animation: none;
+  }
+}

@@ -1,0 +1,108 @@
+/* PROTOTYPE, throw away: Variant A styles, scoped to html[data-proto="a"]. */
+@import "@fontsource/anton/400.css";
+
+html[data-proto="a"] {
+  --va-orange: #ec671b;
+  --va-orange-text: #b54c0e;
+  --va-blue: #1a6aa1;
+  --va-blue-deep: #12517d;
+  --va-magenta: #b9115b;
+  --va-lime: #94c93e;
+  --va-grey: #ededed;
+  --va-ink: #1f2a33;
+
+  --background: #ffffff;
+  --foreground: #5b5b5b;
+  --heading: var(--va-ink);
+  --card: #ffffff;
+  --card-foreground: #5b5b5b;
+  --popover: #ffffff;
+  --popover-foreground: #5b5b5b;
+  --primary: var(--va-orange);
+  --primary-foreground: #ffffff;
+  --secondary: var(--va-grey);
+  --secondary-foreground: var(--va-ink);
+  --muted: var(--va-grey);
+  --muted-foreground: #5b5b5b;
+  --accent: var(--va-grey);
+  --accent-foreground: var(--va-ink);
+  --destructive: #b3261e;
+  --border: #d6d6d6;
+  --input: #d6d6d6;
+  --ring: var(--va-blue);
+  --radius: 1.25rem;
+  color-scheme: light;
+}
+
+html[data-proto="a"] body {
+  background: #ffffff;
+  color: var(--foreground);
+}
+
+html[data-proto="a"] :is(h1, h2, h3),
+html[data-proto="a"] .va-display {
+  font-family: "Anton", "Impact", "Arial Narrow", sans-serif;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  line-height: 0.98;
+}
+
+/* Hero: blue band with a heavily rounded bottom. */
+html[data-proto="a"] .va-hero {
+  background:
+    radial-gradient(
+      900px 500px at 85% 0%,
+      rgb(255 255 255 / 0.09),
+      transparent 70%
+    ),
+    var(--va-blue);
+  border-radius: 0 0 clamp(48px, 9vw, 140px) clamp(48px, 9vw, 140px);
+}
+
+/* Key phrase highlighted with a lime marker behind dark ink (never white on lime). */
+html[data-proto="a"] .va-hero h1 em {
+  font-style: normal;
+  color: var(--va-ink);
+  background: var(--va-lime);
+  display: inline-block;
+  line-height: 0.92;
+  padding: 0.06em 0.2em 0.02em;
+  margin-top: 0.08em;
+  border-radius: 0.16em;
+  transform: rotate(-2deg);
+}
+
+html[data-proto="a"] .va-idea {
+  border-radius: 28px;
+  border: 0;
+  background: #ffffff;
+  color: var(--va-ink);
+  padding: 1.25rem 1.5rem;
+  font-size: 1.125rem;
+  line-height: 1.55;
+  box-shadow: 0 18px 40px -18px rgb(0 0 0 / 0.45);
+}
+html[data-proto="a"] .va-idea::placeholder {
+  color: #7a7a7a;
+}
+html[data-proto="a"] .va-idea:focus-visible {
+  outline: 4px solid var(--va-lime);
+  outline-offset: 3px;
+}
+
+html[data-proto="a"] .va-pill {
+  border-radius: 9999px;
+}
+
+/* Cuts: orange strike through grey text. */
+html[data-proto="a"] .va-cut {
+  text-decoration: line-through;
+  text-decoration-color: var(--va-orange);
+  text-decoration-thickness: 3px;
+}
+
+html[data-proto="a"] .va-placeholder {
+  border: 2px dashed #c9c9c9;
+  border-radius: 36px;
+}
