@@ -33,3 +33,17 @@ The look matches the workshop decks: cyanotype blue sheet with a drafting grid, 
 Finish a change with `pnpm lint` and `pnpm build` both clean. After editing `cloudflare.config.ts`, run `pnpm cf-typegen` to regenerate the `Env` types (`.cloudflare/types`, git-ignored). Use the `cf` CLI (`cf dev`, `cf build`, `cf deploy`), not Wrangler.
 
 TypeScript stays on 6.x: typescript-eslint does not support TS 7 yet. `paths` in the tsconfigs work without `baseUrl`, which TS 6 deprecates.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live as local markdown files under `.scratch/<feature>/`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`), recorded as a `Status:` line in each issue file. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `GLOSSARY.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
