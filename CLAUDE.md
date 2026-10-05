@@ -30,7 +30,9 @@ The look matches the workshop decks: cyanotype blue sheet with a drafting grid, 
 
 ## Checks
 
-Finish a change with `pnpm lint` and `pnpm build` both clean. After editing `cloudflare.config.ts`, run `pnpm cf-typegen` to regenerate the `Env` types (`.cloudflare/types`, git-ignored). Use the `cf` CLI (`cf dev`, `cf build`, `cf deploy`), not Wrangler.
+Prettier formats and ESLint lints. A pre-commit hook (simple-git-hooks + lint-staged) formats staged files and blocks the commit on any ESLint error or warning; CI runs the same checks on every PR. Never commit with `--no-verify`: fix what the hook reports. `pnpm format` / `pnpm lint:fix` apply fixes across the repo; `pnpm format:check` / `pnpm lint` only check. `.prettierignore` keeps the vendored skills (`.agents/`, `.claude/skills/`) out.
+
+Finish a change with `pnpm format:check`, `pnpm lint` and `pnpm build` all clean. After editing `cloudflare.config.ts`, run `pnpm cf-typegen` to regenerate the `Env` types (`.cloudflare/types`, git-ignored). Use the `cf` CLI (`cf dev`, `cf build`, `cf deploy`), not Wrangler.
 
 TypeScript stays on 6.x: typescript-eslint does not support TS 7 yet. `paths` in the tsconfigs work without `baseUrl`, which TS 6 deprecates.
 

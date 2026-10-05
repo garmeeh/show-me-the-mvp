@@ -5,3 +5,5 @@
 allowBuilds:
   esbuild: true
   workerd: true
+  # The `prepare` script installs the git hooks instead.
+  simple-git-hooks: false

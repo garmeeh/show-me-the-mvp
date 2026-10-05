@@ -1,0 +1,9 @@
+# Vendored agent skills, managed by skills-lock.json
+.agents/
+.claude/skills/
+skills-lock.json
+
+# Generated
+pnpm-lock.yaml
+.cloudflare/
+dist/
